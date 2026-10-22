@@ -56,8 +56,6 @@ app.use(
   })
 );
 
-// Explicit preflight OPTIONS handler
-app.options("*", cors());
 
 // 🧩 Body Parsers
 app.use(express.json());
