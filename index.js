@@ -64,13 +64,17 @@ app.use((err, req, res, next) => {
   res.status(err.status || 500).json({ message: err.message || "Internal server error" });
 });
 
-// ✅ START CRON JOB
-import("./utils/cron.js");
+// ✅ START CRON JOB (only in standalone/local server, not in serverless)
+if (!process.env.VERCEL) {
+  import("./utils/cron.js");
+}
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 export default app;
