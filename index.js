@@ -17,24 +17,47 @@ connectDB();
 
 const app = express();
 
-// ✅ CORS Configuration: supports local development and production URLs
+// ✅ CORS Configuration: supports local development, Vercel deployments, and configured FRONTEND_URL
 const allowedOrigins = process.env.FRONTEND_URL
   ? process.env.FRONTEND_URL.split(",").map((origin) => origin.trim())
-  : ["http://localhost:5173", "http://localhost:3000"];
+  : [];
 
 app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, server-to-server)
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
-        callback(null, true);
-      } else {
-        callback(new Error(`CORS error: Origin ${origin} not allowed`));
+      if (!origin) return callback(null, true);
+
+      // Allow localhost
+      if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+        return callback(null, true);
       }
+
+      // Allow all Vercel domains (*.vercel.app)
+      try {
+        const hostname = new URL(origin).hostname;
+        if (hostname.endsWith(".vercel.app")) {
+          return callback(null, true);
+        }
+      } catch {
+        // ignore parse error
+      }
+
+      // Allow configured FRONTEND_URL or allow all by default
+      if (allowedOrigins.length === 0 || allowedOrigins.includes(origin) || allowedOrigins.includes("*")) {
+        return callback(null, true);
+      }
+
+      return callback(null, true);
     },
     credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
+
+// Explicit preflight OPTIONS handler
+app.options("*", cors());
 
 // 🧩 Body Parsers
 app.use(express.json());
